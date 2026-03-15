@@ -1,0 +1,23 @@
+{
+	"name": "Github_csv",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "github_rawdata_http",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "HttpServerLocation",
+				"relativeUrl": "/arunmp1/neostat_assignment_rawdata/refs/heads/master/Sample_Data_Ingestion.csv"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

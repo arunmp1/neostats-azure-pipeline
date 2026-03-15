@@ -1,0 +1,22 @@
+{
+	"name": "gold_full_logs",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ADLS_neostats",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "server_logs_full.parquet",
+				"folderPath": "server_logs_full",
+				"fileSystem": "gold"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

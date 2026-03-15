@@ -1,0 +1,211 @@
+{
+	"name": "bronze_to_silver",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Bronze_CSV",
+						"type": "DatasetReference"
+					},
+					"name": "bronzesource"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "silver_clean_parquet",
+						"type": "DatasetReference"
+					},
+					"name": "sink",
+					"rejectedDataLinkedService": {
+						"referenceName": "ADLS_neostats",
+						"type": "LinkedServiceReference"
+					}
+				}
+			],
+			"transformations": [
+				{
+					"name": "castdatatypes"
+				},
+				{
+					"name": "servermetadata"
+				},
+				{
+					"name": "instancesize"
+				},
+				{
+					"name": "MaskPII"
+				},
+				{
+					"name": "addanomalyflag"
+				},
+				{
+					"name": "selectrenamecolumns"
+				},
+				{
+					"name": "AddDerivedColumns"
+				},
+				{
+					"name": "deduplicate"
+				},
+				{
+					"name": "removeinvalidcritical"
+				},
+				{
+					"name": "keepvalidrecords"
+				},
+				{
+					"name": "fillmissingvalues"
+				}
+			],
+			"scriptLines": [
+				"source(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> bronzesource",
+				"bronzesource derive({CPU_Utilization (%)} = toDouble(replace(byName('CPU_Utilization (%)'), '%', '')),",
+				"          {Memory_Usage (%)} = toDouble(replace(byName('Memory_Usage (%)'), '%', '')),",
+				"          {Disk_IO (%)} = toDouble(replace(byName('Disk_IO (%)'), '%', '')),",
+				"          {Network_Traffic_In (MB/s)} = toDouble(byName('Network_Traffic_In (MB/s)')),",
+				"          {Network_Traffic_Out (MB/s)} = toDouble(byName('Network_Traffic_Out (MB/s)')),",
+				"          {Uptime (Hours)} = toDouble(byName('Uptime (Hours)')),",
+				"          {Downtime (Hours)} = toDouble(byName('Downtime (Hours)')),",
+				"          Log_Timestamp = toTimestamp(byName('Log_Timestamp'), 'dd-MM-yyyy HH:mm')) ~> castdatatypes",
+				"castdatatypes derive(Server_Role = regexReplace(regexExtract(lower(byName('Hostname')),'srv-([^-]+)',1),'[0-9]','')) ~> servermetadata",
+				"keepvalidrecords derive(Instance_Size = iif(byName('Server_Role') == 'web','Medium',\r",
+				"iif(byName('Server_Role') == 'app','Large',\r",
+				"iif(byName('Server_Role') == 'database','XLarge',\r",
+				"iif(byName('Server_Role') == 'backup','Large',\r",
+				"iif(byName('Server_Role') == 'cache','Small',\r",
+				"'Medium')))))) ~> instancesize",
+				"instancesize derive(IP_Address = concat('MASKED_', left(md5(toString(byName('IP_Address'))),12)),",
+				"          Admin_Email = concat('MASKED_', left(md5(toString(byName('Admin_Email'))),12)),",
+				"          Admin_Phone = concat('MASKED_', left(md5(toString(byName('Admin_Phone'))),12)),",
+				"          Admin_Name = concat('MASKED_', left(md5(toString(byName('Admin_Name'))),12))) ~> MaskPII",
+				"MaskPII derive(Anomaly_Flag = iif(\r",
+				"  toDouble(byName('CPU_Utilization (%)')) > 95 ||\r",
+				"  toDouble(byName('Memory_Usage (%)')) > 95 ||\r",
+				"  toDouble(byName('Disk_IO (%)')) > 95,\r",
+				"  'CRITICAL',\r",
+				"  iif(\r",
+				"    toDouble(byName('CPU_Utilization (%)')) > 75 ||\r",
+				"    toDouble(byName('Memory_Usage (%)')) > 75 ||\r",
+				"    toDouble(byName('Disk_IO (%)')) > 75,\r",
+				"    'WARNING',\r",
+				"    'NORMAL'\r",
+				"  )\r",
+				"),",
+				"          Server_ID = toString(byName('Server_ID')),",
+				"          {Hostname } = byName('Hostname'),",
+				"          OS_Type = byName('OS_Type'),",
+				"          Server_Location = byName('Server_Location')) ~> addanomalyflag",
+				"AddDerivedColumns select(mapColumn(",
+				"          server_id = Server_ID,",
+				"          hostname = {Hostname },",
+				"          server_country = Server_Country,",
+				"          server_city = Server_City,",
+				"          os_type = OS_Type,",
+				"          server_role = Server_Role,",
+				"          instance_size = Instance_Size,",
+				"          cpu_utilization = {CPU_Utilization (%)},",
+				"          memory_usage = {Memory_Usage (%)},",
+				"          disk_io = {Disk_IO (%)},",
+				"          network_in = {Network_Traffic_In (MB/s)},",
+				"          network_out = {Network_Traffic_Out (MB/s)},",
+				"          uptime_hours = {Uptime (Hours)},",
+				"          downtime_hours = {Downtime (Hours)},",
+				"          anomaly_flag = Anomaly_Flag,",
+				"          logtime_stamp = Log_Timestamp,",
+				"          availability_pct,",
+				"          health_score,",
+				"          total_network,",
+				"          sla_breach",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> selectrenamecolumns",
+				"addanomalyflag derive(Server_City = trim(left(byName('Server_Location'), locate(',', byName('Server_Location')) - 1)),",
+				"          Server_Country = trim(right(byName('Server_Location'), length(byName('Server_Location')) - locate(',', byName('Server_Location')))),",
+				"          availability_pct = toDouble(round((toDouble(byName('Uptime (Hours)')) / (toDouble(byName('Uptime (Hours)')) + toDouble(byName('Downtime (Hours)')))) * 100, 2)),",
+				"          health_score = toDouble(round(100 - (0.30 * toDouble(byName('CPU_Utilization (%)'))) - (0.30 * toDouble(byName('Memory_Usage (%)'))) - (0.20 * toDouble(byName('Disk_IO (%)'))) - (0.20 * (100 - toDouble(round((toDouble(byName('Uptime (Hours)')) / (toDouble(byName('Uptime (Hours)')) + toDouble(byName('Downtime (Hours)')))) * 100, 2)))), 2)),",
+				"          total_network = toDouble(round(toDouble(byName('Network_Traffic_In (MB/s)')) + toDouble(byName('Network_Traffic_Out (MB/s)')), 2)),",
+				"          sla_breach = iif(toDouble(byName('Uptime (Hours)')) / (toDouble(byName('Uptime (Hours)')) + toDouble(byName('Downtime (Hours)'))) * 100 < 95, 'BREACH', 'OK')) ~> AddDerivedColumns",
+				"selectrenamecolumns aggregate(groupBy(server_id,",
+				"          logtime_stamp),",
+				"     hostname = first(byName('hostname')),",
+				"          server_country = first(byName('server_country')),",
+				"          server_city = first(byName('server_city')),",
+				"          os_type = first(byName('os_type')),",
+				"          server_role = first(byName('server_role')),",
+				"          instance_size = first(byName('instance_size')),",
+				"          cpu_utilization = first(byName('cpu_utilization')),",
+				"          memory_usage = first(byName('memory_usage')),",
+				"          disk_io = first(byName('disk_io')),",
+				"          network_in = first(byName('network_in')),",
+				"          network_out = first(byName('network_out')),",
+				"          uptime_hours = first(byName('uptime_hours')),",
+				"          downtime_hours = first(byName('downtime_hours')),",
+				"          anomaly_flag = first(byName('anomaly_flag')),",
+				"          availability_pct = first(byName('availability_pct')),",
+				"          health_score = first(byName('health_score')),",
+				"          total_network = first(byName('total_network')),",
+				"          sla_breach = first(byName('sla_breach'))) ~> deduplicate",
+				"servermetadata filter(!isNull(byName('Server_ID')) && ",
+				"!isNull(byName('Hostname')) && ",
+				"!isNull(byName('CPU_Utilization (%)')) && ",
+				"!isNull(byName('Memory_Usage (%)')) && ",
+				"!isNull(byName('Disk_IO (%)')) && ",
+				"!isNull(byName('Log_Timestamp')) &&",
+				"toDouble(byName('CPU_Utilization (%)')) <= 100 &&",
+				"toDouble(byName('Memory_Usage (%)')) <= 100 &&",
+				"toDouble(byName('Disk_IO (%)')) <= 100 &&",
+				"toDouble(byName('Uptime (Hours)')) >= 0 &&",
+				"toDouble(byName('Downtime (Hours)')) >= 0) ~> removeinvalidcritical",
+				"fillmissingvalues filter(toDouble(byName('CPU_Utilization (%)')) >= 0 &&",
+				"toDouble(byName('CPU_Utilization (%)')) <= 100 &&",
+				"toDouble(byName('Memory_Usage (%)')) >= 0 &&",
+				"toDouble(byName('Memory_Usage (%)')) <= 100 &&",
+				"toDouble(byName('Disk_IO (%)')) >= 0 &&",
+				"toDouble(byName('Disk_IO (%)')) <= 100 &&",
+				"toDouble(byName('Uptime (Hours)')) >= 0 &&",
+				"toDouble(byName('Downtime (Hours)')) >= 0 &&",
+				"toDouble(byName('Uptime (Hours)')) + toDouble(byName('Downtime (Hours)')) <= 24) ~> keepvalidrecords",
+				"removeinvalidcritical derive(OS_Type = iif(isNull(byName('OS_Type')) || trim(byName('OS_Type')) == '', 'Unknown', byName('OS_Type')),",
+				"          Server_Location = iif(isNull(byName('Server_Location')) || trim(byName('Server_Location')) == '', 'Unknown, Unknown', byName('Server_Location')),",
+				"          Admin_Name = iif(isNull(byName('Admin_Name')) || trim(byName('Admin_Name')) == '', 'Unassigned', byName('Admin_Name')),",
+				"          {Network_Traffic_In (MB/s)} = iifNull(toDouble(byName('Network_Traffic_In (MB/s)')), toDouble(0.0)),",
+				"          {Network_Traffic_Out (MB/s)} = iifNull(toDouble(byName('Network_Traffic_Out (MB/s)')), toDouble(0.0))) ~> fillmissingvalues",
+				"deduplicate sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          server_id as string,",
+				"          logtime_stamp as timestamp,",
+				"          hostname as string,",
+				"          server_country as string,",
+				"          server_city as string,",
+				"          os_type as string,",
+				"          server_role as string,",
+				"          instance_size as string,",
+				"          cpu_utilization as double,",
+				"          memory_usage as double,",
+				"          disk_io as double,",
+				"          network_in as double,",
+				"          network_out as double,",
+				"          uptime_hours as double,",
+				"          downtime_hours as double,",
+				"          anomaly_flag as string,",
+				"          availability_pct as double,",
+				"          health_score as double,",
+				"          total_network as double,",
+				"          sla_breach as string",
+				"     ),",
+				"     format: 'parquet',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink"
+			]
+		}
+	}
+}

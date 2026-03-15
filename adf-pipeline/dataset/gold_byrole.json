@@ -1,0 +1,22 @@
+{
+	"name": "gold_byrole",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ADLS_neostats",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "agg_by_role.parquet",
+				"folderPath": "agg_by_role",
+				"fileSystem": "gold"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

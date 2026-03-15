@@ -1,0 +1,102 @@
+{
+	"name": "silver_clean_parquet",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ADLS_neostats",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "server_logs_clean",
+				"fileSystem": "silver"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "server_id",
+				"type": "UTF8"
+			},
+			{
+				"name": "logtime_stamp",
+				"type": "INT96"
+			},
+			{
+				"name": "hostname",
+				"type": "UTF8"
+			},
+			{
+				"name": "server_country",
+				"type": "UTF8"
+			},
+			{
+				"name": "server_city",
+				"type": "UTF8"
+			},
+			{
+				"name": "os_type",
+				"type": "UTF8"
+			},
+			{
+				"name": "server_role",
+				"type": "UTF8"
+			},
+			{
+				"name": "instance_size",
+				"type": "UTF8"
+			},
+			{
+				"name": "cpu_utilization",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "memory_usage",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "disk_io",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "network_in",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "network_out",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "uptime_hours",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "downtime_hours",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "anomaly_flag",
+				"type": "UTF8"
+			},
+			{
+				"name": "availability_pct",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "health_score",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "total_network",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "sla_breach",
+				"type": "UTF8"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

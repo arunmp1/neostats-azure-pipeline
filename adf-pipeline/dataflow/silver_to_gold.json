@@ -1,0 +1,278 @@
+{
+	"name": "silver_to_gold",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "silver_clean_parquet",
+						"type": "DatasetReference"
+					},
+					"name": "silversource"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "AzureSqltable1",
+						"type": "DatasetReference"
+					},
+					"name": "sinkfulllogs",
+					"description": "Export data to AzureSql"
+				},
+				{
+					"dataset": {
+						"referenceName": "AzureSqltable2",
+						"type": "DatasetReference"
+					},
+					"name": "sinkaggserver"
+				},
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable3",
+						"type": "DatasetReference"
+					},
+					"name": "sinkagglocation"
+				},
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable4",
+						"type": "DatasetReference"
+					},
+					"name": "sinkaggos"
+				},
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable5",
+						"type": "DatasetReference"
+					},
+					"name": "sinkaggrole"
+				},
+				{
+					"dataset": {
+						"referenceName": "gold_full_logs",
+						"type": "DatasetReference"
+					},
+					"name": "goldsinkfulllogs"
+				},
+				{
+					"dataset": {
+						"referenceName": "gold_byserver",
+						"type": "DatasetReference"
+					},
+					"name": "goldsinkbyserver"
+				},
+				{
+					"dataset": {
+						"referenceName": "gold_bylocation",
+						"type": "DatasetReference"
+					},
+					"name": "goldsinkbylocation"
+				},
+				{
+					"dataset": {
+						"referenceName": "gold_byOS",
+						"type": "DatasetReference"
+					},
+					"name": "goldsinkbyos"
+				},
+				{
+					"dataset": {
+						"referenceName": "gold_byrole",
+						"type": "DatasetReference"
+					},
+					"name": "goldsinkbyrole"
+				}
+			],
+			"transformations": [
+				{
+					"name": "aggbyserver"
+				},
+				{
+					"name": "aggbylocation"
+				},
+				{
+					"name": "aggbyos"
+				},
+				{
+					"name": "aggbyrole"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          server_id as string,",
+				"          logtime_stamp as timestamp,",
+				"          hostname as string,",
+				"          server_country as string,",
+				"          server_city as string,",
+				"          os_type as string,",
+				"          server_role as string,",
+				"          instance_size as string,",
+				"          cpu_utilization as double,",
+				"          memory_usage as double,",
+				"          disk_io as double,",
+				"          network_in as double,",
+				"          network_out as double,",
+				"          uptime_hours as double,",
+				"          downtime_hours as double,",
+				"          anomaly_flag as string,",
+				"          availability_pct as double,",
+				"          health_score as double,",
+				"          total_network as double,",
+				"          sla_breach as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'parquet') ~> silversource",
+				"silversource aggregate(groupBy(hostname,",
+				"          server_role,",
+				"          instance_size),",
+				"     avg_cpu = avg(toDouble(byName('cpu_utilization'))),",
+				"          avg_memory = avg(toDouble(byName('memory_usage'))),",
+				"          avg_disk_io = avg(toDouble(byName('disk_io'))),",
+				"          avg_network_in = avg(toDouble(byName('network_in'))),",
+				"          avg_network_out = avg(toDouble(byName('network_out'))),",
+				"          avg_uptime = avg(toDouble(byName('uptime_hours'))),",
+				"          avg_downtime = avg(toDouble(byName('downtime_hours'))),",
+				"          avg_availability = avg(toDouble(byName('availability_pct'))),",
+				"          avg_health_score = avg(toDouble(byName('health_score'))),",
+				"          total_network = avg(toDouble(byName('total_network'))),",
+				"          avg_total_network = avg(toDouble(byName('total_network'))),",
+				"          sla_breach_count = sum(iif(byName('sla_breach') == 'BREACH', 1, 0)),",
+				"          critical_count = sum(iif(byName('anomaly_flag') == 'CRITICAL', 1, 0)),",
+				"          warning_count = sum(iif(byName('anomaly_flag') == 'WARNING', 1, 0)),",
+				"          total_logs = count()) ~> aggbyserver",
+				"silversource aggregate(groupBy(server_city,",
+				"          server_country),",
+				"     avg_cpu = avg(toDouble(byName('cpu_utilization'))),",
+				"          avg_memory = avg(toDouble(byName('memory_usage'))),",
+				"          avg_disk_io = avg(toDouble(byName('disk_io'))),",
+				"          avg_availability = avg(toDouble(byName('availability_pct'))),",
+				"          avg_health_score = avg(toDouble(byName('health_score'))),",
+				"          total_network = avg(toDouble(byName('total_network'))),",
+				"          sla_breach_count = sum(iif(byName('sla_breach') == 'BREACH', 1, 0)),",
+				"          critical_count = sum(iif(byName('anomaly_flag') == 'CRITICAL', 1, 0)),",
+				"          server_count = countDistinct(byName('hostname')),",
+				"          total_logs = count()) ~> aggbylocation",
+				"silversource aggregate(groupBy(os_type),",
+				"     avg_cpu = avg(toDouble(byName('cpu_utilization'))),",
+				"          avg_memory = avg(toDouble(byName('memory_usage'))),",
+				"          avg_disk_io = avg(toDouble(byName('disk_io'))),",
+				"          avg_availability = avg(toDouble(byName('availability_pct'))),",
+				"          avg_health_score = avg(toDouble(byName('health_score'))),",
+				"          sla_breach_count = sum(iif(byName('sla_breach') == 'BREACH', 1, 0)),",
+				"          critical_count = sum(iif(byName('anomaly_flag') == 'CRITICAL', 1, 0)),",
+				"          server_count = countDistinct(byName('hostname')),",
+				"          total_logs = count()) ~> aggbyos",
+				"silversource aggregate(groupBy(server_role,",
+				"          instance_size),",
+				"     avg_cpu = avg(toDouble(byName('cpu_utilization'))),",
+				"          avg_memory = avg(toDouble(byName('memory_usage'))),",
+				"          avg_disk_io = avg(toDouble(byName('disk_io'))),",
+				"          avg_availability = avg(toDouble(byName('availability_pct'))),",
+				"          avg_health_score = avg(toDouble(byName('health_score'))),",
+				"          sla_breach_count = sum(iif(byName('sla_breach') == 'BREACH', 1, 0)),",
+				"          critical_count = sum(iif(byName('anomaly_flag') == 'CRITICAL', 1, 0)),",
+				"          server_count = countDistinct(byName('hostname')),",
+				"          total_logs = count()) ~> aggbyrole",
+				"silversource sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     recreate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sinkfulllogs",
+				"aggbyserver sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     recreate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sinkaggserver",
+				"aggbylocation sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     recreate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sinkagglocation",
+				"aggbyos sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     recreate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sinkaggos",
+				"aggbyrole sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     recreate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sinkaggrole",
+				"silversource sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> goldsinkfulllogs",
+				"aggbyserver sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> goldsinkbyserver",
+				"aggbylocation sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> goldsinkbylocation",
+				"aggbyos sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> goldsinkbyos",
+				"aggbyrole sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> goldsinkbyrole"
+			]
+		}
+	}
+}

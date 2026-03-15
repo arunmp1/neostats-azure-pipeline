@@ -1,0 +1,17 @@
+{
+	"name": "SQL_server_performance",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase_neostats",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "server_performance_summary"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

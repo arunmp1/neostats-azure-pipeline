@@ -1,0 +1,17 @@
+{
+	"name": "AzureSqltable2",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase_neostats",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "agg_by_server"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

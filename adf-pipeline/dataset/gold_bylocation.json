@@ -1,0 +1,22 @@
+{
+	"name": "gold_bylocation",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ADLS_neostats",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "agg_by_location.parquet",
+				"folderPath": "agg_by_location",
+				"fileSystem": "gold"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
