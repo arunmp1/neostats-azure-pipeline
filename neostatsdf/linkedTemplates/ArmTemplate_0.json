@@ -1,0 +1,1046 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "neostatsdf"
+		},
+		"ADLS_neostats_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'ADLS_neostats'"
+		},
+		"AzureSqlDatabase_neostats_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'AzureSqlDatabase_neostats'"
+		},
+		"ADLS_neostats_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://neostatsassignment.dfs.core.windows.net/"
+		},
+		"AzureSqlDatabase_neostats_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "neostatssql.database.windows.net"
+		},
+		"AzureSqlDatabase_neostats_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "neostats_db"
+		},
+		"AzureSqlDatabase_neostats_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "neostats_db"
+		},
+		"github_rawdata_http_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://raw.githubusercontent.com"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/ADLS_neostats')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ADLS_neostats_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('ADLS_neostats_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlDatabase_neostats')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('AzureSqlDatabase_neostats_properties_typeProperties_server')]",
+					"database": "[parameters('AzureSqlDatabase_neostats_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('AzureSqlDatabase_neostats_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('AzureSqlDatabase_neostats_password')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/github_rawdata_http')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "HttpServer",
+				"typeProperties": {
+					"url": "[parameters('github_rawdata_http_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": true,
+					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/daily_refresh')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Stopped",
+				"pipelines": [],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Day",
+						"interval": 1,
+						"startTime": "2026-03-17T06:00:00",
+						"timeZone": "India Standard Time"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable3')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase_neostats",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "agg_by_location"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase_neostats')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable4')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase_neostats",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "agg_by_os"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase_neostats')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable5')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase_neostats",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "agg_by_role"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase_neostats')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqltable1')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase_neostats",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "server_logs_full"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase_neostats')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqltable2')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase_neostats",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "agg_by_server"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase_neostats')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Bronze_CSV')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADLS_neostats",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "server_logs_raw.csv",
+						"fileSystem": "bronze"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADLS_neostats')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Github_csv')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "github_rawdata_http",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "HttpServerLocation",
+						"relativeUrl": "/arunmp1/neostat_assignment_rawdata/refs/heads/master/Sample_Data_Ingestion.csv"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/github_rawdata_http')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SQL_server_performance')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase_neostats",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "server_performance_summary"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase_neostats')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/gold_byOS')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADLS_neostats",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "agg_by_os.parquet",
+						"folderPath": "agg_by_os",
+						"fileSystem": "gold"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADLS_neostats')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/gold_bylocation')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADLS_neostats",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "agg_by_location.parquet",
+						"folderPath": "agg_by_location",
+						"fileSystem": "gold"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADLS_neostats')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/gold_byrole')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADLS_neostats",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "agg_by_role.parquet",
+						"folderPath": "agg_by_role",
+						"fileSystem": "gold"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADLS_neostats')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/gold_byserver')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADLS_neostats",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "agg_by_server.parquet",
+						"folderPath": "agg_by_server",
+						"fileSystem": "gold"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADLS_neostats')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/gold_full_logs')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADLS_neostats",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "server_logs_full.parquet",
+						"folderPath": "server_logs_full",
+						"fileSystem": "gold"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADLS_neostats')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/silver_clean_parquet')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADLS_neostats",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "server_logs_clean",
+						"fileSystem": "silver"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": [
+					{
+						"name": "server_id",
+						"type": "UTF8"
+					},
+					{
+						"name": "logtime_stamp",
+						"type": "INT96"
+					},
+					{
+						"name": "hostname",
+						"type": "UTF8"
+					},
+					{
+						"name": "server_country",
+						"type": "UTF8"
+					},
+					{
+						"name": "server_city",
+						"type": "UTF8"
+					},
+					{
+						"name": "os_type",
+						"type": "UTF8"
+					},
+					{
+						"name": "server_role",
+						"type": "UTF8"
+					},
+					{
+						"name": "instance_size",
+						"type": "UTF8"
+					},
+					{
+						"name": "cpu_utilization",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "memory_usage",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "disk_io",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "network_in",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "network_out",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "uptime_hours",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "downtime_hours",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "anomaly_flag",
+						"type": "UTF8"
+					},
+					{
+						"name": "availability_pct",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "health_score",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "total_network",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "sla_breach",
+						"type": "UTF8"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADLS_neostats')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/bronze_to_silver')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "Bronze_CSV",
+								"type": "DatasetReference"
+							},
+							"name": "bronzesource"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "silver_clean_parquet",
+								"type": "DatasetReference"
+							},
+							"name": "sink",
+							"rejectedDataLinkedService": {
+								"referenceName": "ADLS_neostats",
+								"type": "LinkedServiceReference"
+							}
+						}
+					],
+					"transformations": [
+						{
+							"name": "castdatatypes"
+						},
+						{
+							"name": "servermetadata"
+						},
+						{
+							"name": "instancesize"
+						},
+						{
+							"name": "MaskPII"
+						},
+						{
+							"name": "addanomalyflag"
+						},
+						{
+							"name": "selectrenamecolumns"
+						},
+						{
+							"name": "AddDerivedColumns"
+						},
+						{
+							"name": "deduplicate"
+						},
+						{
+							"name": "removeinvalidcritical"
+						},
+						{
+							"name": "keepvalidrecords"
+						},
+						{
+							"name": "fillmissingvalues"
+						}
+					],
+					"scriptLines": [
+						"source(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> bronzesource",
+						"bronzesource derive({CPU_Utilization (%)} = toDouble(replace(byName('CPU_Utilization (%)'), '%', '')),",
+						"          {Memory_Usage (%)} = toDouble(replace(byName('Memory_Usage (%)'), '%', '')),",
+						"          {Disk_IO (%)} = toDouble(replace(byName('Disk_IO (%)'), '%', '')),",
+						"          {Network_Traffic_In (MB/s)} = toDouble(byName('Network_Traffic_In (MB/s)')),",
+						"          {Network_Traffic_Out (MB/s)} = toDouble(byName('Network_Traffic_Out (MB/s)')),",
+						"          {Uptime (Hours)} = toDouble(byName('Uptime (Hours)')),",
+						"          {Downtime (Hours)} = toDouble(byName('Downtime (Hours)')),",
+						"          Log_Timestamp = toTimestamp(byName('Log_Timestamp'), 'dd-MM-yyyy HH:mm')) ~> castdatatypes",
+						"castdatatypes derive(Server_Role = regexReplace(regexExtract(lower(byName('Hostname')),'srv-([^-]+)',1),'[0-9]','')) ~> servermetadata",
+						"keepvalidrecords derive(Instance_Size = iif(byName('Server_Role') == 'web','Medium',\r",
+						"iif(byName('Server_Role') == 'app','Large',\r",
+						"iif(byName('Server_Role') == 'database','XLarge',\r",
+						"iif(byName('Server_Role') == 'backup','Large',\r",
+						"iif(byName('Server_Role') == 'cache','Small',\r",
+						"'Medium')))))) ~> instancesize",
+						"instancesize derive(IP_Address = concat('MASKED_', left(md5(toString(byName('IP_Address'))),12)),",
+						"          Admin_Email = concat('MASKED_', left(md5(toString(byName('Admin_Email'))),12)),",
+						"          Admin_Phone = concat('MASKED_', left(md5(toString(byName('Admin_Phone'))),12)),",
+						"          Admin_Name = concat('MASKED_', left(md5(toString(byName('Admin_Name'))),12))) ~> MaskPII",
+						"MaskPII derive(Anomaly_Flag = iif(\r",
+						"  toDouble(byName('CPU_Utilization (%)')) > 95 ||\r",
+						"  toDouble(byName('Memory_Usage (%)')) > 95 ||\r",
+						"  toDouble(byName('Disk_IO (%)')) > 95,\r",
+						"  'CRITICAL',\r",
+						"  iif(\r",
+						"    toDouble(byName('CPU_Utilization (%)')) > 75 ||\r",
+						"    toDouble(byName('Memory_Usage (%)')) > 75 ||\r",
+						"    toDouble(byName('Disk_IO (%)')) > 75,\r",
+						"    'WARNING',\r",
+						"    'NORMAL'\r",
+						"  )\r",
+						"),",
+						"          Server_ID = toString(byName('Server_ID')),",
+						"          {Hostname } = byName('Hostname'),",
+						"          OS_Type = byName('OS_Type'),",
+						"          Server_Location = byName('Server_Location')) ~> addanomalyflag",
+						"AddDerivedColumns select(mapColumn(",
+						"          server_id = Server_ID,",
+						"          hostname = {Hostname },",
+						"          server_country = Server_Country,",
+						"          server_city = Server_City,",
+						"          os_type = OS_Type,",
+						"          server_role = Server_Role,",
+						"          instance_size = Instance_Size,",
+						"          cpu_utilization = {CPU_Utilization (%)},",
+						"          memory_usage = {Memory_Usage (%)},",
+						"          disk_io = {Disk_IO (%)},",
+						"          network_in = {Network_Traffic_In (MB/s)},",
+						"          network_out = {Network_Traffic_Out (MB/s)},",
+						"          uptime_hours = {Uptime (Hours)},",
+						"          downtime_hours = {Downtime (Hours)},",
+						"          anomaly_flag = Anomaly_Flag,",
+						"          logtime_stamp = Log_Timestamp,",
+						"          availability_pct,",
+						"          health_score,",
+						"          total_network,",
+						"          sla_breach",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> selectrenamecolumns",
+						"addanomalyflag derive(Server_City = trim(left(byName('Server_Location'), locate(',', byName('Server_Location')) - 1)),",
+						"          Server_Country = trim(right(byName('Server_Location'), length(byName('Server_Location')) - locate(',', byName('Server_Location')))),",
+						"          availability_pct = toDouble(round((toDouble(byName('Uptime (Hours)')) / (toDouble(byName('Uptime (Hours)')) + toDouble(byName('Downtime (Hours)')))) * 100, 2)),",
+						"          health_score = toDouble(round(100 - (0.30 * toDouble(byName('CPU_Utilization (%)'))) - (0.30 * toDouble(byName('Memory_Usage (%)'))) - (0.20 * toDouble(byName('Disk_IO (%)'))) - (0.20 * (100 - toDouble(round((toDouble(byName('Uptime (Hours)')) / (toDouble(byName('Uptime (Hours)')) + toDouble(byName('Downtime (Hours)')))) * 100, 2)))), 2)),",
+						"          total_network = toDouble(round(toDouble(byName('Network_Traffic_In (MB/s)')) + toDouble(byName('Network_Traffic_Out (MB/s)')), 2)),",
+						"          sla_breach = iif(toDouble(byName('Uptime (Hours)')) / (toDouble(byName('Uptime (Hours)')) + toDouble(byName('Downtime (Hours)'))) * 100 < 95, 'BREACH', 'OK')) ~> AddDerivedColumns",
+						"selectrenamecolumns aggregate(groupBy(server_id,",
+						"          logtime_stamp),",
+						"     hostname = first(byName('hostname')),",
+						"          server_country = first(byName('server_country')),",
+						"          server_city = first(byName('server_city')),",
+						"          os_type = first(byName('os_type')),",
+						"          server_role = first(byName('server_role')),",
+						"          instance_size = first(byName('instance_size')),",
+						"          cpu_utilization = first(byName('cpu_utilization')),",
+						"          memory_usage = first(byName('memory_usage')),",
+						"          disk_io = first(byName('disk_io')),",
+						"          network_in = first(byName('network_in')),",
+						"          network_out = first(byName('network_out')),",
+						"          uptime_hours = first(byName('uptime_hours')),",
+						"          downtime_hours = first(byName('downtime_hours')),",
+						"          anomaly_flag = first(byName('anomaly_flag')),",
+						"          availability_pct = first(byName('availability_pct')),",
+						"          health_score = first(byName('health_score')),",
+						"          total_network = first(byName('total_network')),",
+						"          sla_breach = first(byName('sla_breach'))) ~> deduplicate",
+						"servermetadata filter(!isNull(byName('Server_ID')) && ",
+						"!isNull(byName('Hostname')) && ",
+						"!isNull(byName('CPU_Utilization (%)')) && ",
+						"!isNull(byName('Memory_Usage (%)')) && ",
+						"!isNull(byName('Disk_IO (%)')) && ",
+						"!isNull(byName('Log_Timestamp')) &&",
+						"toDouble(byName('CPU_Utilization (%)')) <= 100 &&",
+						"toDouble(byName('Memory_Usage (%)')) <= 100 &&",
+						"toDouble(byName('Disk_IO (%)')) <= 100 &&",
+						"toDouble(byName('Uptime (Hours)')) >= 0 &&",
+						"toDouble(byName('Downtime (Hours)')) >= 0) ~> removeinvalidcritical",
+						"fillmissingvalues filter(toDouble(byName('CPU_Utilization (%)')) >= 0 &&",
+						"toDouble(byName('CPU_Utilization (%)')) <= 100 &&",
+						"toDouble(byName('Memory_Usage (%)')) >= 0 &&",
+						"toDouble(byName('Memory_Usage (%)')) <= 100 &&",
+						"toDouble(byName('Disk_IO (%)')) >= 0 &&",
+						"toDouble(byName('Disk_IO (%)')) <= 100 &&",
+						"toDouble(byName('Uptime (Hours)')) >= 0 &&",
+						"toDouble(byName('Downtime (Hours)')) >= 0 &&",
+						"toDouble(byName('Uptime (Hours)')) + toDouble(byName('Downtime (Hours)')) <= 24) ~> keepvalidrecords",
+						"removeinvalidcritical derive(OS_Type = iif(isNull(byName('OS_Type')) || trim(byName('OS_Type')) == '', 'Unknown', byName('OS_Type')),",
+						"          Server_Location = iif(isNull(byName('Server_Location')) || trim(byName('Server_Location')) == '', 'Unknown, Unknown', byName('Server_Location')),",
+						"          Admin_Name = iif(isNull(byName('Admin_Name')) || trim(byName('Admin_Name')) == '', 'Unassigned', byName('Admin_Name')),",
+						"          {Network_Traffic_In (MB/s)} = iifNull(toDouble(byName('Network_Traffic_In (MB/s)')), toDouble(0.0)),",
+						"          {Network_Traffic_Out (MB/s)} = iifNull(toDouble(byName('Network_Traffic_Out (MB/s)')), toDouble(0.0))) ~> fillmissingvalues",
+						"deduplicate sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          server_id as string,",
+						"          logtime_stamp as timestamp,",
+						"          hostname as string,",
+						"          server_country as string,",
+						"          server_city as string,",
+						"          os_type as string,",
+						"          server_role as string,",
+						"          instance_size as string,",
+						"          cpu_utilization as double,",
+						"          memory_usage as double,",
+						"          disk_io as double,",
+						"          network_in as double,",
+						"          network_out as double,",
+						"          uptime_hours as double,",
+						"          downtime_hours as double,",
+						"          anomaly_flag as string,",
+						"          availability_pct as double,",
+						"          health_score as double,",
+						"          total_network as double,",
+						"          sla_breach as string",
+						"     ),",
+						"     format: 'parquet',",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> sink"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Bronze_CSV')]",
+				"[concat(variables('factoryId'), '/datasets/silver_clean_parquet')]",
+				"[concat(variables('factoryId'), '/linkedServices/ADLS_neostats')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/silver_to_gold')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "silver_clean_parquet",
+								"type": "DatasetReference"
+							},
+							"name": "silversource"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqltable1",
+								"type": "DatasetReference"
+							},
+							"name": "sinkfulllogs",
+							"description": "Export data to AzureSql"
+						},
+						{
+							"dataset": {
+								"referenceName": "AzureSqltable2",
+								"type": "DatasetReference"
+							},
+							"name": "sinkaggserver"
+						},
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable3",
+								"type": "DatasetReference"
+							},
+							"name": "sinkagglocation"
+						},
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable4",
+								"type": "DatasetReference"
+							},
+							"name": "sinkaggos"
+						},
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable5",
+								"type": "DatasetReference"
+							},
+							"name": "sinkaggrole"
+						},
+						{
+							"dataset": {
+								"referenceName": "gold_full_logs",
+								"type": "DatasetReference"
+							},
+							"name": "goldsinkfulllogs"
+						},
+						{
+							"dataset": {
+								"referenceName": "gold_byserver",
+								"type": "DatasetReference"
+							},
+							"name": "goldsinkbyserver"
+						},
+						{
+							"dataset": {
+								"referenceName": "gold_bylocation",
+								"type": "DatasetReference"
+							},
+							"name": "goldsinkbylocation"
+						},
+						{
+							"dataset": {
+								"referenceName": "gold_byOS",
+								"type": "DatasetReference"
+							},
+							"name": "goldsinkbyos"
+						},
+						{
+							"dataset": {
+								"referenceName": "gold_byrole",
+								"type": "DatasetReference"
+							},
+							"name": "goldsinkbyrole"
+						}
+					],
+					"transformations": [
+						{
+							"name": "aggbyserver"
+						},
+						{
+							"name": "aggbylocation"
+						},
+						{
+							"name": "aggbyos"
+						},
+						{
+							"name": "aggbyrole"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          server_id as string,",
+						"          logtime_stamp as timestamp,",
+						"          hostname as string,",
+						"          server_country as string,",
+						"          server_city as string,",
+						"          os_type as string,",
+						"          server_role as string,",
+						"          instance_size as string,",
+						"          cpu_utilization as double,",
+						"          memory_usage as double,",
+						"          disk_io as double,",
+						"          network_in as double,",
+						"          network_out as double,",
+						"          uptime_hours as double,",
+						"          downtime_hours as double,",
+						"          anomaly_flag as string,",
+						"          availability_pct as double,",
+						"          health_score as double,",
+						"          total_network as double,",
+						"          sla_breach as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false,",
+						"     format: 'parquet') ~> silversource",
+						"silversource aggregate(groupBy(hostname,",
+						"          server_role,",
+						"          instance_size),",
+						"     avg_cpu = avg(toDouble(byName('cpu_utilization'))),",
+						"          avg_memory = avg(toDouble(byName('memory_usage'))),",
+						"          avg_disk_io = avg(toDouble(byName('disk_io'))),",
+						"          avg_network_in = avg(toDouble(byName('network_in'))),",
+						"          avg_network_out = avg(toDouble(byName('network_out'))),",
+						"          avg_uptime = avg(toDouble(byName('uptime_hours'))),",
+						"          avg_downtime = avg(toDouble(byName('downtime_hours'))),",
+						"          avg_availability = avg(toDouble(byName('availability_pct'))),",
+						"          avg_health_score = avg(toDouble(byName('health_score'))),",
+						"          total_network = avg(toDouble(byName('total_network'))),",
+						"          avg_total_network = avg(toDouble(byName('total_network'))),",
+						"          sla_breach_count = sum(iif(byName('sla_breach') == 'BREACH', 1, 0)),",
+						"          critical_count = sum(iif(byName('anomaly_flag') == 'CRITICAL', 1, 0)),",
+						"          warning_count = sum(iif(byName('anomaly_flag') == 'WARNING', 1, 0)),",
+						"          total_logs = count()) ~> aggbyserver",
+						"silversource aggregate(groupBy(server_city,",
+						"          server_country),",
+						"     avg_cpu = avg(toDouble(byName('cpu_utilization'))),",
+						"          avg_memory = avg(toDouble(byName('memory_usage'))),",
+						"          avg_disk_io = avg(toDouble(byName('disk_io'))),",
+						"          avg_availability = avg(toDouble(byName('availability_pct'))),",
+						"          avg_health_score = avg(toDouble(byName('health_score'))),",
+						"          total_network = avg(toDouble(byName('total_network'))),",
+						"          sla_breach_count = sum(iif(byName('sla_breach') == 'BREACH', 1, 0)),",
+						"          critical_count = sum(iif(byName('anomaly_flag') == 'CRITICAL', 1, 0)),",
+						"          server_count = countDistinct(byName('hostname')),",
+						"          total_logs = count()) ~> aggbylocation",
+						"silversource aggregate(groupBy(os_type),",
+						"     avg_cpu = avg(toDouble(byName('cpu_utilization'))),",
+						"          avg_memory = avg(toDouble(byName('memory_usage'))),",
+						"          avg_disk_io = avg(toDouble(byName('disk_io'))),",
+						"          avg_availability = avg(toDouble(byName('availability_pct'))),",
+						"          avg_health_score = avg(toDouble(byName('health_score'))),",
+						"          sla_breach_count = sum(iif(byName('sla_breach') == 'BREACH', 1, 0)),",
+						"          critical_count = sum(iif(byName('anomaly_flag') == 'CRITICAL', 1, 0)),",
+						"          server_count = countDistinct(byName('hostname')),",
+						"          total_logs = count()) ~> aggbyos",
+						"silversource aggregate(groupBy(server_role,",
+						"          instance_size),",
+						"     avg_cpu = avg(toDouble(byName('cpu_utilization'))),",
+						"          avg_memory = avg(toDouble(byName('memory_usage'))),",
+						"          avg_disk_io = avg(toDouble(byName('disk_io'))),",
+						"          avg_availability = avg(toDouble(byName('availability_pct'))),",
+						"          avg_health_score = avg(toDouble(byName('health_score'))),",
+						"          sla_breach_count = sum(iif(byName('sla_breach') == 'BREACH', 1, 0)),",
+						"          critical_count = sum(iif(byName('anomaly_flag') == 'CRITICAL', 1, 0)),",
+						"          server_count = countDistinct(byName('hostname')),",
+						"          total_logs = count()) ~> aggbyrole",
+						"silversource sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     recreate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> sinkfulllogs",
+						"aggbyserver sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     recreate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> sinkaggserver",
+						"aggbylocation sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     recreate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> sinkagglocation",
+						"aggbyos sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     recreate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> sinkaggos",
+						"aggbyrole sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     recreate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> sinkaggrole",
+						"silversource sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'parquet',",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> goldsinkfulllogs",
+						"aggbyserver sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'parquet',",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> goldsinkbyserver",
+						"aggbylocation sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'parquet',",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> goldsinkbylocation",
+						"aggbyos sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'parquet',",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> goldsinkbyos",
+						"aggbyrole sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'parquet',",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> goldsinkbyrole"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/silver_clean_parquet')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqltable1')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqltable2')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqlTable3')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqlTable4')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqlTable5')]",
+				"[concat(variables('factoryId'), '/datasets/gold_full_logs')]",
+				"[concat(variables('factoryId'), '/datasets/gold_byserver')]",
+				"[concat(variables('factoryId'), '/datasets/gold_bylocation')]",
+				"[concat(variables('factoryId'), '/datasets/gold_byOS')]",
+				"[concat(variables('factoryId'), '/datasets/gold_byrole')]"
+			]
+		}
+	]
+}

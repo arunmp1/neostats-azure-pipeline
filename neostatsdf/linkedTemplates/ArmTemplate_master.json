@@ -1,0 +1,111 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "neostatsdf"
+		},
+		"ADLS_neostats_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'ADLS_neostats'"
+		},
+		"AzureSqlDatabase_neostats_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'AzureSqlDatabase_neostats'"
+		},
+		"ADLS_neostats_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://neostatsassignment.dfs.core.windows.net/"
+		},
+		"AzureSqlDatabase_neostats_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "neostatssql.database.windows.net"
+		},
+		"AzureSqlDatabase_neostats_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "neostats_db"
+		},
+		"AzureSqlDatabase_neostats_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "neostats_db"
+		},
+		"github_rawdata_http_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://raw.githubusercontent.com"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "neostatsdf_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"ADLS_neostats_accountKey": {
+						"value": "[parameters('ADLS_neostats_accountKey')]"
+					},
+					"AzureSqlDatabase_neostats_password": {
+						"value": "[parameters('AzureSqlDatabase_neostats_password')]"
+					},
+					"ADLS_neostats_properties_typeProperties_url": {
+						"value": "[parameters('ADLS_neostats_properties_typeProperties_url')]"
+					},
+					"AzureSqlDatabase_neostats_properties_typeProperties_server": {
+						"value": "[parameters('AzureSqlDatabase_neostats_properties_typeProperties_server')]"
+					},
+					"AzureSqlDatabase_neostats_properties_typeProperties_database": {
+						"value": "[parameters('AzureSqlDatabase_neostats_properties_typeProperties_database')]"
+					},
+					"AzureSqlDatabase_neostats_properties_typeProperties_userName": {
+						"value": "[parameters('AzureSqlDatabase_neostats_properties_typeProperties_userName')]"
+					},
+					"github_rawdata_http_properties_typeProperties_url": {
+						"value": "[parameters('github_rawdata_http_properties_typeProperties_url')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "neostatsdf_ArmTemplate_1",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_1.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'neostatsdf_ArmTemplate_0')]"
+			]
+		}
+	]
+}

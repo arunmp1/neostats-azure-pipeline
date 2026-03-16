@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "neostatsdf"
+		},
+		"ADLS_neostats_accountKey": {
+			"value": ""
+		},
+		"AzureSqlDatabase_neostats_password": {
+			"value": ""
+		},
+		"ADLS_neostats_properties_typeProperties_url": {
+			"value": "https://neostatsassignment.dfs.core.windows.net/"
+		},
+		"AzureSqlDatabase_neostats_properties_typeProperties_server": {
+			"value": "neostatssql.database.windows.net"
+		},
+		"AzureSqlDatabase_neostats_properties_typeProperties_database": {
+			"value": "neostats_db"
+		},
+		"AzureSqlDatabase_neostats_properties_typeProperties_userName": {
+			"value": "neostats_db"
+		},
+		"github_rawdata_http_properties_typeProperties_url": {
+			"value": "https://raw.githubusercontent.com"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
