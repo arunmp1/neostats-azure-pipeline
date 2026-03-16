@@ -17,7 +17,7 @@ Azure Data Factory and runs on a daily schedule with zero manual intervention.
 
 ## Architecture
 
-GitHub (CSV) → ADF Schedule Trigger → File Validation → Copy Activity → Bronze Layer (ADLS Gen2)
+GitHub (CSV) → ADF Schedule Trigger → Copy Activity → Bronze Layer (ADLS Gen2)
 → Mapping Data Flow (Cleaning) → Silver Layer (ADLS Gen2)
 → Mapping Data Flow (Aggregation) → Gold Layer (ADLS Gen2) + Azure SQL Database
 → Power BI Dashboard
@@ -95,9 +95,7 @@ neostats-azure-pipeline/
 
 ### Data Ingestion
 - Source: GitHub raw CSV via HTTP Linked Service (anonymous authentication)
-- File validation: If Condition activity checks filename starts with 'Server'
 - Copy Activity writes exact CSV to Bronze container in ADLS Gen2
-- Schedule Trigger fires daily at 06:00 AM automatically
 
 ### Bronze to Silver Transformations
 - Type cast 7 numeric columns from String to Double
