@@ -127,6 +127,7 @@
 				"     ignoreNoFilesFound: false,",
 				"     format: 'parquet') ~> silversource",
 				"silversource aggregate(groupBy(hostname,",
+				"          server_city,",
 				"          server_role,",
 				"          instance_size),",
 				"     avg_cpu = avg(toDouble(byName('cpu_utilization'))),",
