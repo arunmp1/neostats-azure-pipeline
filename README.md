@@ -1,4 +1,4 @@
-# NeoStats — Virtual Server Monitoring & Performance Optimization
+# Virtual Server Monitoring & Performance Optimization
 
 A production-grade data engineering pipeline built on Microsoft Azure for XYZ Corp, 
 implementing automated ingestion, transformation, and visualization of virtual server 
@@ -46,7 +46,7 @@ The pipeline implements the Medallion Architecture across three layers:
 
 ## Repository Structure
 ```
-neostats-azure-pipeline/
+azure-pipeline/
 │
 ├── README.md
 │
@@ -55,13 +55,13 @@ neostats-azure-pipeline/
 │
 ├── adf-pipeline/
 │   ├── pipeline/
-│   │   └── PL_NeoStats_Ingestion.json
+│   │   └── PL_Ingestion.json
 │   ├── dataflow/
 │   │   ├── bronze_to_silver_cleaning.json
 │   │   └── silver_to_gold_analytics.json
 │   ├── linkedService/
 │   │   ├── LS_GitHub_HTTP.json
-│   │   ├── LS_ADLS_NeoStats.json
+│   │   ├── LS_ADLS.json
 │   │   └── LS_AzureSQL.json
 │   ├── dataset/
 │   │   ├── DS_Bronze_CSV.json
@@ -75,10 +75,10 @@ neostats-azure-pipeline/
 │   └── validation_queries.sql
 │
 ├── powerbi/
-│   └── NeoStats_Dashboard.pbix
+│   └──Dashboard.pbix
 │
 ├── docs/
-│   ├── NeoStats_Report.docx
+│   ├── Report.docx
 │   └── architecture_diagram.png
 │
 └── screenshots/
@@ -181,7 +181,7 @@ Page 2 — Server Performance Deep Dive
 5. Run SQL scripts in sql/create_tables.sql against your Azure SQL Database
 6. Trigger the pipeline manually once to validate end-to-end execution
 7. Verify row counts using sql/validation_queries.sql
-8. Open powerbi/NeoStats_Dashboard.pbix and update SQL connection string
+8. Open powerbi/Dashboard.pbix and update SQL connection string
 9. Publish dashboard to Power BI Service if required
 
 ---
